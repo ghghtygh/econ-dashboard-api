@@ -15,13 +15,13 @@ class IndicatorData(
     @JoinColumn(name = "indicator_id", nullable = false)
     var indicator: Indicator,
 
-    @Column(nullable = false)
+    @Column(name = "\"date\"", nullable = false)
     var date: LocalDate,
 
-    @Column(nullable = false, precision = 20, scale = 6)
+    @Column(name = "\"value\"", nullable = false, precision = 20, scale = 6)
     var value: BigDecimal,
 
-    @Column(precision = 20, scale = 6)
+    @Column(name = "\"open\"", precision = 20, scale = 6)
     var open: BigDecimal? = null,
 
     @Column(precision = 20, scale = 6)
@@ -30,13 +30,13 @@ class IndicatorData(
     @Column(precision = 20, scale = 6)
     var low: BigDecimal? = null,
 
-    @Column(precision = 20, scale = 6)
+    @Column(name = "\"close\"", precision = 20, scale = 6)
     var close: BigDecimal? = null,
 
     @Column(precision = 20, scale = 2)
     var volume: BigDecimal? = null,
 
-    @Column(precision = 10, scale = 4)
+    @Column(name = "\"change\"", precision = 10, scale = 4)
     var change: BigDecimal? = null,
 
     @Id
