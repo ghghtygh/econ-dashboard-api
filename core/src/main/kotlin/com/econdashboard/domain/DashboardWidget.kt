@@ -11,13 +11,13 @@ class DashboardWidget(
     var title: String,
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "chart_type", nullable = false)
     var chartType: ChartType,
 
-    @Column(nullable = false)
+    @Column(name = "position_x", nullable = false)
     var positionX: Int,
 
-    @Column(nullable = false)
+    @Column(name = "position_y", nullable = false)
     var positionY: Int,
 
     @Column(nullable = false)
