@@ -1,6 +1,7 @@
 package com.econdashboard.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.cache.RedisCacheConfiguration
@@ -13,7 +14,14 @@ import org.springframework.data.redis.serializer.StringRedisSerializer
 import java.time.Duration
 
 @Configuration
+@EnableCaching
 class RedisConfig {
+
+    companion object {
+        const val CACHE_INDICATORS = "indicators"
+        const val CACHE_INDICATOR_LATEST = "indicator:latest"
+        const val CACHE_INDICATOR_SERIES = "indicator:series"
+    }
 
     @Bean
     fun redisTemplate(connectionFactory: RedisConnectionFactory, objectMapper: ObjectMapper): RedisTemplate<String, Any> {
@@ -28,14 +36,31 @@ class RedisConfig {
 
     @Bean
     fun cacheManager(connectionFactory: RedisConnectionFactory, objectMapper: ObjectMapper): RedisCacheManager {
-        val config = RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofMinutes(5))
-            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(StringRedisSerializer()))
-            .serializeValuesWith(
-                RedisSerializationContext.SerializationPair.fromSerializer(
-                    GenericJackson2JsonRedisSerializer(objectMapper)
-                )
-            )
-        return RedisCacheManager.builder(connectionFactory).cacheDefaults(config).build()
+        val jsonSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
+        val keySerializer = StringRedisSerializer()
+
+        val defaultConfig = createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5))
+
+        val cacheConfigs = mapOf(
+            CACHE_INDICATORS to createCacheConfig(keySerializer, jsonSerializer, Duration.ofHours(1)),
+            CACHE_INDICATOR_LATEST to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5)),
+            CACHE_INDICATOR_SERIES to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5))
+        )
+
+        return RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(defaultConfig)
+            .withInitialCacheConfigurations(cacheConfigs)
+            .build()
+    }
+
+    private fun createCacheConfig(
+        keySerializer: StringRedisSerializer,
+        valueSerializer: GenericJackson2JsonRedisSerializer,
+        ttl: Duration
+    ): RedisCacheConfiguration {
+        return RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(ttl)
+            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(keySerializer))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer))
     }
 }
