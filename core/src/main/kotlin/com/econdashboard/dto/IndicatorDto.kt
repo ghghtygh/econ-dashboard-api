@@ -4,6 +4,8 @@ import com.econdashboard.domain.Indicator
 import com.econdashboard.domain.IndicatorData
 import com.econdashboard.enums.DataSource
 import com.econdashboard.enums.IndicatorCategory
+import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.NotNull
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -63,7 +65,17 @@ data class IndicatorDataResponse(
 }
 
 data class IndicatorSeriesRequest(
+    @field:NotEmpty(message = "지표 ID 목록은 비어있을 수 없습니다")
+    val indicatorIds: List<Long>,
+
+    @field:NotNull(message = "시작 날짜는 필수입니다")
+    val startDate: LocalDate,
+
+    @field:NotNull(message = "종료 날짜는 필수입니다")
+    val endDate: LocalDate
+)
+
+data class IndicatorSeriesResponse(
     val indicatorId: Long,
-    val startDate: LocalDate?,
-    val endDate: LocalDate?
+    val data: List<IndicatorDataResponse>
 )

@@ -1,6 +1,7 @@
 package com.econdashboard.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,6 +25,7 @@ class RedisConfig {
     }
 
     @Bean
+    @ConditionalOnBean(RedisConnectionFactory::class)
     fun redisTemplate(connectionFactory: RedisConnectionFactory, objectMapper: ObjectMapper): RedisTemplate<String, Any> {
         return RedisTemplate<String, Any>().apply {
             this.connectionFactory = connectionFactory
@@ -35,6 +37,7 @@ class RedisConfig {
     }
 
     @Bean
+    @ConditionalOnBean(RedisConnectionFactory::class)
     fun cacheManager(connectionFactory: RedisConnectionFactory, objectMapper: ObjectMapper): RedisCacheManager {
         val jsonSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
         val keySerializer = StringRedisSerializer()
