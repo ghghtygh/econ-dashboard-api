@@ -24,4 +24,6 @@ interface IndicatorDataRepository : JpaRepository<IndicatorData, Long> {
     fun findTopByIndicatorIdOrderByDateDesc(indicatorId: Long): IndicatorData?
 
     fun findByIndicatorIdOrderByDateDesc(indicatorId: Long): List<IndicatorData>
+
+    fun findByIndicatorIdAndDate(indicatorId: Long, date: LocalDate): IndicatorData?
 }
