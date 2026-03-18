@@ -7,7 +7,8 @@ COPY core ./core
 COPY infra ./infra
 COPY api-app ./api-app
 COPY batch ./batch
-RUN gradle :api-app:bootJar --no-daemon -x test
+RUN gradle :api-app:bootJar --no-daemon -x test && \
+    rm -f /app/api-app/build/libs/*-plain.jar
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:21-jre-alpine
