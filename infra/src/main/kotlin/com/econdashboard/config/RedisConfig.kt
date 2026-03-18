@@ -1,7 +1,10 @@
 package com.econdashboard.config
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,22 +27,33 @@ class RedisConfig {
         const val CACHE_INDICATOR_SERIES = "indicator:series"
     }
 
-    @Bean
-    @ConditionalOnBean(RedisConnectionFactory::class)
-    fun redisTemplate(connectionFactory: RedisConnectionFactory, objectMapper: ObjectMapper): RedisTemplate<String, Any> {
-        return RedisTemplate<String, Any>().apply {
-            this.connectionFactory = connectionFactory
-            keySerializer = StringRedisSerializer()
-            valueSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
-            hashKeySerializer = StringRedisSerializer()
-            hashValueSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
+    private fun redisObjectMapper(): ObjectMapper {
+        return ObjectMapper().apply {
+            registerModule(JavaTimeModule())
+            registerModule(KotlinModule.Builder().build())
+            activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+            )
         }
     }
 
     @Bean
-    @ConditionalOnBean(RedisConnectionFactory::class)
-    fun cacheManager(connectionFactory: RedisConnectionFactory, objectMapper: ObjectMapper): RedisCacheManager {
-        val jsonSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
+    fun redisTemplate(connectionFactory: RedisConnectionFactory): RedisTemplate<String, Any> {
+        val jsonSerializer = GenericJackson2JsonRedisSerializer(redisObjectMapper())
+        return RedisTemplate<String, Any>().apply {
+            this.connectionFactory = connectionFactory
+            keySerializer = StringRedisSerializer()
+            valueSerializer = jsonSerializer
+            hashKeySerializer = StringRedisSerializer()
+            hashValueSerializer = jsonSerializer
+        }
+    }
+
+    @Bean
+    fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager {
+        val jsonSerializer = GenericJackson2JsonRedisSerializer(redisObjectMapper())
         val keySerializer = StringRedisSerializer()
 
         val defaultConfig = createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5))

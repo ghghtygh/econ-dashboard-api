@@ -2,6 +2,7 @@ package com.econdashboard.scheduler
 
 import com.econdashboard.collector.CryptoCollector
 import com.econdashboard.collector.MarketCollector
+import com.econdashboard.collector.NewsCollector
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -9,7 +10,8 @@ import org.springframework.stereotype.Component
 @Component
 class DataCollectorScheduler(
     private val cryptoCollector: CryptoCollector,
-    private val marketCollector: MarketCollector
+    private val marketCollector: MarketCollector,
+    private val newsCollector: NewsCollector
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -50,6 +52,19 @@ class DataCollectorScheduler(
             marketCollector.collectHourly()
         } catch (e: Exception) {
             log.error("[Scheduler] Market (hourly) collection failed: {}", e.message, e)
+        }
+    }
+
+    /**
+     * 경제 뉴스 수집 - 매 30분
+     */
+    @Scheduled(fixedRate = 30 * 60 * 1000, initialDelay = 25_000)
+    fun collectNewsData() {
+        log.info("[Scheduler] News collection started")
+        try {
+            newsCollector.collect()
+        } catch (e: Exception) {
+            log.error("[Scheduler] News collection failed: {}", e.message, e)
         }
     }
 }
