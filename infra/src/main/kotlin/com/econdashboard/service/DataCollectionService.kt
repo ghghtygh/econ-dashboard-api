@@ -43,6 +43,25 @@ class DataCollectionService(
         }
     }
 
+    fun collectAll(): Map<String, Int> {
+        val indicators = indicatorRepository.findAll()
+        var success = 0
+        var fail = 0
+
+        for (indicator in indicators) {
+            try {
+                if (collectLatestData(indicator)) success++ else fail++
+            } catch (e: Exception) {
+                log.error("Collection failed for {}: {}", indicator.symbol, e.message)
+                fail++
+            }
+        }
+
+        log.info("Full collection completed: {} success, {} failed out of {} indicators",
+            success, fail, indicators.size)
+        return mapOf("total" to indicators.size, "success" to success, "fail" to fail)
+    }
+
     fun collectBySymbols(symbols: List<String>) {
         val indicators = symbols.mapNotNull { symbol ->
             indicatorRepository.findBySymbol(symbol) ?: run {
