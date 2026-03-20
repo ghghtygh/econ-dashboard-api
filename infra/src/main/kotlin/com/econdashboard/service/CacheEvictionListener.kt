@@ -14,7 +14,7 @@ class CacheEvictionListener(
 
     @EventListener
     fun onIndicatorDataCollected(event: IndicatorDataCollectedEvent) {
-        log.debug("Evicting caches for indicator: {}", event.indicatorId)
+        log.info("Cache refresh triggered for indicator: {}", event.indicatorId)
         indicatorCacheService.evictAllCachesForIndicator(event.indicatorId)
     }
 }

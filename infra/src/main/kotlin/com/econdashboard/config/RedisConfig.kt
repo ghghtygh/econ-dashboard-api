@@ -60,8 +60,8 @@ class RedisConfig {
 
         val cacheConfigs = mapOf(
             CACHE_INDICATORS to createCacheConfig(keySerializer, jsonSerializer, Duration.ofHours(1)),
-            CACHE_INDICATOR_LATEST to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5)),
-            CACHE_INDICATOR_SERIES to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5))
+            CACHE_INDICATOR_LATEST to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(6)),
+            CACHE_INDICATOR_SERIES to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(6))
         )
 
         return RedisCacheManager.builder(connectionFactory)
