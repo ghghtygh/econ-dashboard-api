@@ -2,6 +2,7 @@ package com.econdashboard.service
 
 import com.econdashboard.domain.NewsArticle
 import com.econdashboard.enums.NewsCategory
+import com.econdashboard.repository.NewsFeedRepository
 import com.econdashboard.repository.NewsArticleRepository
 import com.rometools.rome.io.SyndFeedInput
 import org.slf4j.LoggerFactory
@@ -14,36 +15,33 @@ import java.time.ZoneId
 
 @Service
 class NewsCollectionService(
-    private val newsArticleRepository: NewsArticleRepository
+    private val newsArticleRepository: NewsArticleRepository,
+    private val newsFeedRepository: NewsFeedRepository
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    companion object {
-        val RSS_FEEDS = mapOf(
-            "https://feeds.finance.yahoo.com/rss/2.0/headline?s=^GSPC&region=US&lang=en-US" to NewsCategory.STOCK,
-            "https://feeds.finance.yahoo.com/rss/2.0/headline?s=^DJI&region=US&lang=en-US" to NewsCategory.STOCK,
-            "https://feeds.finance.yahoo.com/rss/2.0/headline?s=EURUSD=X&region=US&lang=en-US" to NewsCategory.FOREX,
-            "https://feeds.finance.yahoo.com/rss/2.0/headline?s=BTC-USD&region=US&lang=en-US" to NewsCategory.CRYPTO,
-            "https://feeds.finance.yahoo.com/rss/2.0/headline?s=GC=F&region=US&lang=en-US" to NewsCategory.COMMODITY,
-            "https://feeds.finance.yahoo.com/rss/2.0/headline?s=^TNX&region=US&lang=en-US" to NewsCategory.BOND
-        )
-    }
-
     @Transactional
     fun collectNews(): Int {
+        val feeds = newsFeedRepository.findByEnabledTrue()
+
+        if (feeds.isEmpty()) {
+            log.warn("No enabled news feeds found")
+            return 0
+        }
+
         var totalCollected = 0
 
-        RSS_FEEDS.forEach { (feedUrl, category) ->
+        feeds.forEach { feed ->
             try {
-                val count = collectFromFeed(feedUrl, category)
+                val count = collectFromFeed(feed.url, feed.category)
                 totalCollected += count
-                log.info("Collected {} news from feed: {}", count, feedUrl)
+                log.info("Collected {} news from feed: {} ({})", count, feed.name, feed.category)
             } catch (e: Exception) {
-                log.error("Failed to collect news from feed {}: {}", feedUrl, e.message)
+                log.error("Failed to collect news from feed {} ({}): {}", feed.name, feed.url, e.message)
             }
         }
 
-        log.info("Total news collected: {}", totalCollected)
+        log.info("Total news collected: {} from {} feeds", totalCollected, feeds.size)
         return totalCollected
     }
 

@@ -1,5 +1,6 @@
 package com.econdashboard.collector
 
+import com.econdashboard.enums.DataSource
 import com.econdashboard.service.DataCollectionService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -11,12 +12,8 @@ class CryptoCollector(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    companion object {
-        val CRYPTO_SYMBOLS = listOf("bitcoin", "ethereum")
-    }
-
     fun collect() {
-        log.info("Starting crypto data collection for {} symbols", CRYPTO_SYMBOLS.size)
-        dataCollectionService.collectBySymbols(CRYPTO_SYMBOLS)
+        log.info("Starting crypto data collection")
+        dataCollectionService.collectBySource(DataSource.COINGECKO)
     }
 }
