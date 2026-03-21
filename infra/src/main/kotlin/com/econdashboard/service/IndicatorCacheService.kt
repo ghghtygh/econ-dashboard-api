@@ -8,16 +8,23 @@ import com.econdashboard.domain.IndicatorData
 import com.econdashboard.enums.IndicatorCategory
 import com.econdashboard.repository.IndicatorDataRepository
 import com.econdashboard.repository.IndicatorRepository
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 @Service
 class IndicatorCacheService(
     private val indicatorRepository: IndicatorRepository,
-    private val indicatorDataRepository: IndicatorDataRepository
+    private val indicatorDataRepository: IndicatorDataRepository,
+    @Autowired(required = false)
+    private val redisTemplate: RedisTemplate<String, Any>? = null
 ) {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @Cacheable(cacheNames = [CACHE_INDICATORS], key = "'all'")
     fun findAllIndicators(): List<Indicator> {
@@ -59,8 +66,24 @@ class IndicatorCacheService(
         // 시계열 캐시 전체 초기화
     }
 
+    /**
+     * 특정 지표의 시리즈 캐시만 패턴 기반으로 삭제
+     */
+    fun evictSeriesCacheForIndicator(indicatorId: Long) {
+        if (redisTemplate == null) {
+            log.debug("RedisTemplate not available, skipping pattern-based cache eviction for indicator {}", indicatorId)
+            return
+        }
+        val pattern = "$CACHE_INDICATOR_SERIES::$indicatorId:*"
+        val keys = redisTemplate.keys(pattern)
+        if (keys.isNotEmpty()) {
+            redisTemplate.delete(keys)
+            log.info("Evicted {} series cache entries for indicator {}", keys.size, indicatorId)
+        }
+    }
+
     fun evictAllCachesForIndicator(indicatorId: Long) {
         evictLatestDataCache(indicatorId)
-        evictSeriesCache()
+        evictSeriesCacheForIndicator(indicatorId)
     }
 }
