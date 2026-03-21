@@ -11,6 +11,7 @@ import com.econdashboard.repository.IndicatorRepository
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -19,7 +20,8 @@ import java.time.LocalDate
 class IndicatorCacheService(
     private val indicatorRepository: IndicatorRepository,
     private val indicatorDataRepository: IndicatorDataRepository,
-    private val redisTemplate: RedisTemplate<String, Any>
+    @Autowired(required = false)
+    private val redisTemplate: RedisTemplate<String, Any>? = null
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -68,6 +70,10 @@ class IndicatorCacheService(
      * 특정 지표의 시리즈 캐시만 패턴 기반으로 삭제
      */
     fun evictSeriesCacheForIndicator(indicatorId: Long) {
+        if (redisTemplate == null) {
+            log.debug("RedisTemplate not available, skipping pattern-based cache eviction for indicator {}", indicatorId)
+            return
+        }
         val pattern = "$CACHE_INDICATOR_SERIES::$indicatorId:*"
         val keys = redisTemplate.keys(pattern)
         if (keys.isNotEmpty()) {
