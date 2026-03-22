@@ -13,7 +13,7 @@ class MarketCollector(
 
     companion object {
         // 주식/환율 - 매 5분 수집
-        val FREQUENT_SYMBOLS = listOf("^GSPC", "^IXIC", "^KS11", "USDKRW=X", "EURUSD=X")
+        val FREQUENT_SYMBOLS = listOf("^GSPC", "^IXIC", "^KS11", "^DJI", "^RUT", "^KQ11", "^VIX", "USDKRW=X", "EURUSD=X")
 
         // 원자재/채권 - 매 1시간 수집
         val HOURLY_SYMBOLS = listOf("GC=F", "CL=F", "NG=F", "HG=F", "ZW=F", "ZS=F", "^TNX", "^IRX")
