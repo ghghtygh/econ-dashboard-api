@@ -1,6 +1,7 @@
 package com.econdashboard.scheduler
 
 import com.econdashboard.collector.CryptoCollector
+import com.econdashboard.collector.MacroCollector
 import com.econdashboard.collector.MarketCollector
 import com.econdashboard.collector.NewsCollector
 import org.slf4j.LoggerFactory
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component
 @Component
 class DataCollectorScheduler(
     private val cryptoCollector: CryptoCollector,
+    private val macroCollector: MacroCollector,
     private val marketCollector: MarketCollector,
     private val newsCollector: NewsCollector
 ) {
@@ -52,6 +54,20 @@ class DataCollectorScheduler(
             marketCollector.collectHourly()
         } catch (e: Exception) {
             log.error("[Scheduler] Market (hourly) collection failed: {}", e.message, e)
+        }
+    }
+
+    /**
+     * 거시경제 지표 수집 (FRED) - 매 6시간
+     * CPI, 실업률, PCE 등은 월간 데이터이므로 하루 4회면 충분
+     */
+    @Scheduled(fixedRate = 6 * 60 * 60 * 1000, initialDelay = 30_000)
+    fun collectMacroData() {
+        log.info("[Scheduler] Macro (FRED) collection started")
+        try {
+            macroCollector.collect()
+        } catch (e: Exception) {
+            log.error("[Scheduler] Macro (FRED) collection failed: {}", e.message, e)
         }
     }
 
