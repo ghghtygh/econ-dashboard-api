@@ -16,7 +16,7 @@ class MarketCollector(
         val FREQUENT_SYMBOLS = listOf("^GSPC", "^IXIC", "^KS11", "USDKRW=X", "EURUSD=X")
 
         // 원자재/채권 - 매 1시간 수집
-        val HOURLY_SYMBOLS = listOf("GC=F", "CL=F", "^TNX", "^IRX")
+        val HOURLY_SYMBOLS = listOf("GC=F", "CL=F", "NG=F", "HG=F", "ZW=F", "ZS=F", "^TNX", "^IRX")
     }
 
     fun collectFrequent() {
