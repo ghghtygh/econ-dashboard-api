@@ -25,4 +25,12 @@ class WebClientConfig {
             .defaultHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0")
             .build()
     }
+
+    @Bean
+    fun fredWebClient(): WebClient {
+        return WebClient.builder()
+            .baseUrl("https://api.stlouisfed.org/fred")
+            .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+            .build()
+    }
 }

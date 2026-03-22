@@ -4,6 +4,8 @@ import com.econdashboard.client.common.DataSourceClientFactory
 import com.econdashboard.client.common.ExternalDataPoint
 import com.econdashboard.domain.Indicator
 import com.econdashboard.domain.IndicatorData
+import com.econdashboard.enums.DataSource
+import com.econdashboard.enums.IndicatorCategory
 import com.econdashboard.event.IndicatorDataCollectedEvent
 import com.econdashboard.repository.IndicatorDataRepository
 import com.econdashboard.repository.IndicatorRepository
@@ -41,6 +43,28 @@ class DataCollectionService(
                 indicator.name, indicator.symbol, e.message)
             false
         }
+    }
+
+    fun collectBySourceAndCategories(source: DataSource, categories: List<IndicatorCategory>) {
+        val indicators = indicatorRepository.findBySourceAndCategoryIn(source, categories)
+        if (indicators.isEmpty()) {
+            log.warn("No indicators found for source={}, categories={}", source, categories)
+            return
+        }
+
+        var successCount = 0
+        var failCount = 0
+
+        indicators.forEach { indicator ->
+            if (collectLatestData(indicator)) {
+                successCount++
+            } else {
+                failCount++
+            }
+        }
+
+        log.info("Collection by source={} completed: {} success, {} failed out of {} indicators",
+            source, successCount, failCount, indicators.size)
     }
 
     fun collectBySymbols(symbols: List<String>) {
