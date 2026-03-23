@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -19,6 +20,7 @@ import java.time.Duration
 
 @Configuration
 @EnableCaching
+@ConditionalOnBean(RedisConnectionFactory::class)
 class RedisConfig {
 
     companion object {
