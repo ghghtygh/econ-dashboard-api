@@ -9,6 +9,13 @@ import com.econdashboard.enums.IndicatorCategory
 import com.econdashboard.event.IndicatorDataCollectedEvent
 import com.econdashboard.repository.IndicatorDataRepository
 import com.econdashboard.repository.IndicatorRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withTimeout
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -23,6 +30,11 @@ class DataCollectionService(
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    companion object {
+        private const val MAX_CONCURRENCY = 3
+        private const val COLLECTION_TIMEOUT_MS = 4L * 60 * 1000 // 4분 타임아웃
+    }
 
     @Transactional
     fun collectLatestData(indicator: Indicator): Boolean {
@@ -75,18 +87,26 @@ class DataCollectionService(
             }
         }
 
-        var successCount = 0
-        var failCount = 0
+        if (indicators.isEmpty()) return
 
-        indicators.forEach { indicator ->
-            if (collectLatestData(indicator)) {
-                successCount++
-            } else {
-                failCount++
+        val semaphore = Semaphore(MAX_CONCURRENCY)
+
+        val results = runBlocking {
+            withTimeout(COLLECTION_TIMEOUT_MS) {
+                indicators.map { indicator ->
+                    async(Dispatchers.IO) {
+                        semaphore.withPermit {
+                            collectLatestData(indicator)
+                        }
+                    }
+                }.awaitAll()
             }
         }
 
-        log.info("Collection completed: {} success, {} failed out of {} indicators",
+        val successCount = results.count { it }
+        val failCount = results.count { !it }
+
+        log.info("Parallel collection completed: {} success, {} failed out of {} indicators",
             successCount, failCount, indicators.size)
     }
 
