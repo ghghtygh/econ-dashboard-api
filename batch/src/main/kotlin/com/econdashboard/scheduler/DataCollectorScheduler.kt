@@ -4,6 +4,7 @@ import com.econdashboard.collector.CryptoCollector
 import com.econdashboard.collector.MacroCollector
 import com.econdashboard.collector.MarketCollector
 import com.econdashboard.collector.NewsCollector
+import com.econdashboard.service.CacheEvictionListener
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -13,7 +14,8 @@ class DataCollectorScheduler(
     private val cryptoCollector: CryptoCollector,
     private val macroCollector: MacroCollector,
     private val marketCollector: MarketCollector,
-    private val newsCollector: NewsCollector
+    private val newsCollector: NewsCollector,
+    private val cacheEvictionListener: CacheEvictionListener
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -26,6 +28,7 @@ class DataCollectorScheduler(
         log.info("[Scheduler] Crypto collection started")
         try {
             cryptoCollector.collect()
+            cacheEvictionListener.onBatchCollectionCompleted()
         } catch (e: Exception) {
             log.error("[Scheduler] Crypto collection failed: {}", e.message, e)
         }
@@ -39,6 +42,7 @@ class DataCollectorScheduler(
         log.info("[Scheduler] Market (frequent) collection started")
         try {
             marketCollector.collectFrequent()
+            cacheEvictionListener.onBatchCollectionCompleted()
         } catch (e: Exception) {
             log.error("[Scheduler] Market (frequent) collection failed: {}", e.message, e)
         }
@@ -52,6 +56,7 @@ class DataCollectorScheduler(
         log.info("[Scheduler] Market (hourly) collection started")
         try {
             marketCollector.collectHourly()
+            cacheEvictionListener.onBatchCollectionCompleted()
         } catch (e: Exception) {
             log.error("[Scheduler] Market (hourly) collection failed: {}", e.message, e)
         }
@@ -66,6 +71,7 @@ class DataCollectorScheduler(
         log.info("[Scheduler] Macro (FRED) collection started")
         try {
             macroCollector.collect()
+            cacheEvictionListener.onBatchCollectionCompleted()
         } catch (e: Exception) {
             log.error("[Scheduler] Macro (FRED) collection failed: {}", e.message, e)
         }
