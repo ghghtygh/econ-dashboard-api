@@ -17,4 +17,14 @@ class CacheEvictionListener(
         log.debug("Evicting caches for indicator: {}", event.indicatorId)
         indicatorCacheService.evictAllCachesForIndicator(event.indicatorId)
     }
+
+    /**
+     * 배치 수집 사이클 완료 후 호출하여 전체 캐시를 명시적으로 갱신합니다.
+     * 이를 통해 캐시 TTL과 배치 주기 간 타이밍 불일치 문제를 해결합니다.
+     */
+    fun onBatchCollectionCompleted() {
+        log.info("Batch collection completed — evicting all caches for fresh data")
+        indicatorCacheService.evictIndicatorsCache()
+        indicatorCacheService.evictSeriesCache()
+    }
 }

@@ -58,12 +58,14 @@ class RedisConfig {
         val jsonSerializer = GenericJackson2JsonRedisSerializer(redisObjectMapper())
         val keySerializer = StringRedisSerializer()
 
-        val defaultConfig = createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5))
+        val defaultConfig = createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(6))
 
+        // TTL을 배치 주기(5분)보다 약간 길게(6분) 설정하여,
+        // 배치 완료 → 캐시 evict 사이 불필요한 TTL 만료를 방지
         val cacheConfigs = mapOf(
             CACHE_INDICATORS to createCacheConfig(keySerializer, jsonSerializer, Duration.ofHours(1)),
-            CACHE_INDICATOR_LATEST to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5)),
-            CACHE_INDICATOR_SERIES to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(5))
+            CACHE_INDICATOR_LATEST to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(6)),
+            CACHE_INDICATOR_SERIES to createCacheConfig(keySerializer, jsonSerializer, Duration.ofMinutes(6))
         )
 
         return RedisCacheManager.builder(connectionFactory)
