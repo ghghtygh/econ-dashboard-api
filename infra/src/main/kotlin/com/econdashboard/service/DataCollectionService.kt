@@ -13,6 +13,10 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 
 @Service
 class DataCollectionService(
@@ -23,6 +27,14 @@ class DataCollectionService(
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * 외부 API rate limit을 고려한 동시성 제한.
+     * Yahoo Finance: ~2000/hour, CoinGecko free: ~30/min
+     * 안전하게 동시 3개로 제한
+     */
+    private val concurrencyLimit = Semaphore(3)
+    private val executor = Executors.newFixedThreadPool(3)
 
     @Transactional
     fun collectLatestData(indicator: Indicator): Boolean {
@@ -52,19 +64,9 @@ class DataCollectionService(
             return
         }
 
-        var successCount = 0
-        var failCount = 0
-
-        indicators.forEach { indicator ->
-            if (collectLatestData(indicator)) {
-                successCount++
-            } else {
-                failCount++
-            }
-        }
-
+        val results = collectInParallel(indicators)
         log.info("Collection by source={} completed: {} success, {} failed out of {} indicators",
-            source, successCount, failCount, indicators.size)
+            source, results.first, results.second, indicators.size)
     }
 
     fun collectBySymbols(symbols: List<String>) {
@@ -75,19 +77,57 @@ class DataCollectionService(
             }
         }
 
-        var successCount = 0
-        var failCount = 0
+        val results = collectInParallel(indicators)
+        log.info("Collection completed: {} success, {} failed out of {} indicators",
+            results.first, results.second, indicators.size)
+    }
 
-        indicators.forEach { indicator ->
-            if (collectLatestData(indicator)) {
-                successCount++
-            } else {
-                failCount++
+    /**
+     * 복수 지표를 병렬로 수집합니다.
+     * Semaphore로 동시 요청 수를 제한하여 외부 API rate limit을 준수합니다.
+     * 전체 수집이 4분 내에 완료되도록 타임아웃을 설정합니다.
+     *
+     * @return Pair(successCount, failCount)
+     */
+    private fun collectInParallel(indicators: List<Indicator>): Pair<Int, Int> {
+        if (indicators.isEmpty()) return Pair(0, 0)
+
+        val futures = indicators.map { indicator ->
+            CompletableFuture.supplyAsync({
+                try {
+                    concurrencyLimit.acquire()
+                    try {
+                        collectLatestData(indicator)
+                    } finally {
+                        concurrencyLimit.release()
+                    }
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    log.error("Collection interrupted for {}", indicator.symbol)
+                    false
+                }
+            }, executor)
+        }
+
+        // 5분 배치 주기 내 완료를 보장하기 위해 4분 타임아웃
+        val allDone = CompletableFuture.allOf(*futures.toTypedArray())
+        try {
+            allDone.get(4, TimeUnit.MINUTES)
+        } catch (e: Exception) {
+            log.warn("Parallel collection timed out or failed: {}", e.message)
+        }
+
+        val results = futures.map { future ->
+            try {
+                future.getNow(false)
+            } catch (e: Exception) {
+                false
             }
         }
 
-        log.info("Collection completed: {} success, {} failed out of {} indicators",
-            successCount, failCount, indicators.size)
+        val successCount = results.count { it }
+        val failCount = results.size - successCount
+        return Pair(successCount, failCount)
     }
 
     private fun upsertDataPoint(indicator: Indicator, dataPoint: ExternalDataPoint) {
