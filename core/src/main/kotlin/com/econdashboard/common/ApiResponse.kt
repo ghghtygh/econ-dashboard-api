@@ -20,10 +20,17 @@ data class ApiResponse<T>(
             success = false,
             error = ErrorDetail(code, message)
         )
+
+        fun <T> error(code: String, message: String, detail: String?, stackTrace: List<String>?): ApiResponse<T> = ApiResponse(
+            success = false,
+            error = ErrorDetail(code, message, detail, stackTrace)
+        )
     }
 }
 
 data class ErrorDetail(
     val code: String,
-    val message: String
+    val message: String,
+    val detail: String? = null,
+    val stackTrace: List<String>? = null
 )
