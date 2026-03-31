@@ -10,6 +10,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -53,6 +54,12 @@ class GlobalExceptionHandler {
     fun handleHttpMessageNotReadableException(ex: HttpMessageNotReadableException): ResponseEntity<ApiResponse<Nothing>> {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiResponse.error("INVALID_REQUEST_BODY", "요청 본문을 읽을 수 없습니다"))
+    }
+
+    @ExceptionHandler(NoResourceFoundException::class)
+    fun handleNoResourceFoundException(ex: NoResourceFoundException): ResponseEntity<ApiResponse<Nothing>> {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error("NOT_FOUND", "요청한 리소스를 찾을 수 없습니다: ${ex.resourcePath}"))
     }
 
     @ExceptionHandler(Exception::class)
