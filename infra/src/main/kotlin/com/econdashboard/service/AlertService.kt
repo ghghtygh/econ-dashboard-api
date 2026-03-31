@@ -5,6 +5,7 @@ import com.econdashboard.domain.AlertRule
 import com.econdashboard.dto.AlertHistoryResponse
 import com.econdashboard.dto.AlertRuleRequest
 import com.econdashboard.dto.AlertRuleResponse
+import com.econdashboard.dto.AlertRuleUpdateRequest
 import com.econdashboard.enums.AlertConditionType
 import com.econdashboard.exception.NotFoundException
 import com.econdashboard.repository.AlertHistoryRepository
@@ -29,6 +30,10 @@ class AlertService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    fun getAlertRules(): List<AlertRuleResponse> {
+        return alertRuleRepository.findAll().map { AlertRuleResponse.from(it) }
+    }
+
     @Transactional
     fun createAlertRule(request: AlertRuleRequest): AlertRuleResponse {
         val indicator = indicatorRepository.findById(request.indicatorId)
@@ -37,10 +42,41 @@ class AlertService(
         val rule = AlertRule(
             userId = request.userId,
             indicator = indicator,
-            conditionType = request.conditionType,
-            threshold = request.threshold
+            conditionType = request.toConditionType(),
+            threshold = request.threshold,
+            severity = request.toSeverity(),
+            message = request.message
         )
         return AlertRuleResponse.from(alertRuleRepository.save(rule))
+    }
+
+    @Transactional
+    fun updateAlertRule(id: Long, request: AlertRuleUpdateRequest): AlertRuleResponse {
+        val rule = alertRuleRepository.findById(id)
+            .orElseThrow { NotFoundException("AlertRule", id) }
+
+        request.condition?.let {
+            rule.conditionType = when (it) {
+                "above", "cross_above" -> AlertConditionType.ABOVE
+                "below", "cross_below" -> AlertConditionType.BELOW
+                "change_pct" -> AlertConditionType.CHANGE_PCT
+                else -> rule.conditionType
+            }
+        }
+        request.threshold?.let { rule.threshold = it }
+        request.severity?.let { rule.severity = com.econdashboard.enums.AlertSeverity.fromValue(it) }
+        request.message?.let { rule.message = it }
+        request.enabled?.let { rule.enabled = it }
+
+        return AlertRuleResponse.from(alertRuleRepository.save(rule))
+    }
+
+    @Transactional
+    fun deleteAlertRule(id: Long) {
+        if (!alertRuleRepository.existsById(id)) {
+            throw NotFoundException("AlertRule", id)
+        }
+        alertRuleRepository.deleteById(id)
     }
 
     fun getAlertHistory(userId: String, pageable: Pageable): Page<AlertHistoryResponse> {

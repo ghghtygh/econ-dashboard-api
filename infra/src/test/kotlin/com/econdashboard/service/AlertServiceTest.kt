@@ -56,8 +56,10 @@ class AlertServiceTest {
         val request = AlertRuleRequest(
             userId = "user1",
             indicatorId = 1L,
-            conditionType = AlertConditionType.ABOVE,
-            threshold = BigDecimal("70000")
+            condition = "above",
+            threshold = BigDecimal("70000"),
+            severity = "warning",
+            message = "테스트 메시지"
         )
         every { indicatorRepository.findById(1L) } returns Optional.of(indicator)
         every { alertRuleRepository.save(any()) } answers {
@@ -70,8 +72,7 @@ class AlertServiceTest {
 
         val result = alertService.createAlertRule(request)
 
-        assertEquals("user1", result.userId)
-        assertEquals(AlertConditionType.ABOVE, result.conditionType)
+        assertEquals("above", result.condition)
         assertEquals(BigDecimal("70000"), result.threshold)
         verify { alertRuleRepository.save(any()) }
     }
@@ -81,7 +82,7 @@ class AlertServiceTest {
         val request = AlertRuleRequest(
             userId = "user1",
             indicatorId = 999L,
-            conditionType = AlertConditionType.ABOVE,
+            condition = "above",
             threshold = BigDecimal("70000")
         )
         every { indicatorRepository.findById(999L) } returns Optional.empty()

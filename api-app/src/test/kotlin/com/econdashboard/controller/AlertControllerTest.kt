@@ -33,25 +33,25 @@ class AlertControllerTest {
     @Test
     fun `POST alert rule - 정상 생성`() {
         val response = AlertRuleResponse(
-            id = 1L,
-            userId = "user1",
+            id = "1",
             indicatorId = 1L,
             indicatorName = "비트코인",
-            conditionType = AlertConditionType.ABOVE,
+            condition = "above",
             threshold = BigDecimal("70000"),
+            severity = "warning",
+            message = "",
             enabled = true,
-            createdAt = now,
-            updatedAt = now
+            createdAt = now.toString(),
+            updatedAt = now.toString()
         )
         every { alertService.createAlertRule(any()) } returns response
 
         mockMvc.post("/api/alerts/rules") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"userId":"user1","indicatorId":1,"conditionType":"ABOVE","threshold":70000}"""
+            content = """{"userId":"user1","indicatorId":1,"condition":"above","threshold":70000}"""
         }.andExpect {
             status { isCreated() }
-            jsonPath("$.data.userId") { value("user1") }
-            jsonPath("$.data.conditionType") { value("ABOVE") }
+            jsonPath("$.data.condition") { value("above") }
         }
     }
 
@@ -61,11 +61,35 @@ class AlertControllerTest {
 
         mockMvc.post("/api/alerts/rules") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"userId":"user1","indicatorId":999,"conditionType":"ABOVE","threshold":70000}"""
+            content = """{"userId":"user1","indicatorId":999,"condition":"above","threshold":70000}"""
         }.andExpect {
             status { isNotFound() }
             jsonPath("$.error.code") { value("NOT_FOUND") }
         }
+    }
+
+    @Test
+    fun `GET alert rules - 규칙 목록 조회`() {
+        val response = AlertRuleResponse(
+            id = "1",
+            indicatorId = 1L,
+            indicatorName = "비트코인",
+            condition = "above",
+            threshold = BigDecimal("70000"),
+            severity = "warning",
+            message = "",
+            enabled = true,
+            createdAt = now.toString(),
+            updatedAt = now.toString()
+        )
+        every { alertService.getAlertRules() } returns listOf(response)
+
+        mockMvc.get("/api/alerts/rules")
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.data[0].id") { value("1") }
+                jsonPath("$.data[0].condition") { value("above") }
+            }
     }
 
     @Test

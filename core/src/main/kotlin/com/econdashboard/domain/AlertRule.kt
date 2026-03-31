@@ -1,6 +1,7 @@
 package com.econdashboard.domain
 
 import com.econdashboard.enums.AlertConditionType
+import com.econdashboard.enums.AlertSeverity
 import jakarta.persistence.*
 import java.math.BigDecimal
 
@@ -20,6 +21,13 @@ class AlertRule(
 
     @Column(nullable = false, precision = 20, scale = 6)
     var threshold: BigDecimal,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var severity: AlertSeverity = AlertSeverity.WARNING,
+
+    @Column(nullable = false, length = 500)
+    var message: String = "",
 
     @Column(nullable = false)
     var enabled: Boolean = true,
