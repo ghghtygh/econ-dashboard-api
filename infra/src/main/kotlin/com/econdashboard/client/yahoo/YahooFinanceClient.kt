@@ -70,7 +70,7 @@ class YahooFinanceClient(
         val volumes = quote.path("volume")
 
         return (0 until timestamps.size()).mapNotNull { i ->
-            val close = closes[i]?.asDouble() ?: return@mapNotNull null
+            val close = closes[i]?.asDouble()?.takeIf { it > 0.0 } ?: return@mapNotNull null
             val date = Instant.ofEpochSecond(timestamps[i].asLong())
                 .atZone(ZoneOffset.UTC).toLocalDate()
 
