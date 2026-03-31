@@ -15,8 +15,8 @@ class CryptoCollector(
         val CRYPTO_SYMBOLS = listOf("bitcoin", "ethereum")
     }
 
-    fun collect() {
+    fun collect(): Int {
         log.info("Starting crypto data collection for {} symbols", CRYPTO_SYMBOLS.size)
-        dataCollectionService.collectBySymbols(CRYPTO_SYMBOLS)
+        return dataCollectionService.collectBySymbols(CRYPTO_SYMBOLS)
     }
 }

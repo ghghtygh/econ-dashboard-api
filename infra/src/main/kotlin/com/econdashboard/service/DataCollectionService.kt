@@ -58,19 +58,20 @@ class DataCollectionService(
         }
     }
 
-    fun collectBySourceAndCategories(source: DataSource, categories: List<IndicatorCategory>) {
+    fun collectBySourceAndCategories(source: DataSource, categories: List<IndicatorCategory>): Int {
         val indicators = indicatorRepository.findBySourceAndCategoryIn(source, categories)
         if (indicators.isEmpty()) {
             log.warn("No indicators found for source={}, categories={}", source, categories)
-            return
+            return 0
         }
 
         val results = collectInParallel(indicators)
         log.info("Collection by source={} completed: {} success, {} failed out of {} indicators",
             source, results.first, results.second, indicators.size)
+        return results.first
     }
 
-    fun collectBySymbols(symbols: List<String>) {
+    fun collectBySymbols(symbols: List<String>): Int {
         val indicators = symbols.mapNotNull { symbol ->
             indicatorRepository.findBySymbol(symbol) ?: run {
                 log.warn("Indicator not found for symbol: {}", symbol)
@@ -81,6 +82,7 @@ class DataCollectionService(
         val results = collectInParallel(indicators)
         log.info("Collection completed: {} success, {} failed out of {} indicators",
             results.first, results.second, indicators.size)
+        return results.first
     }
 
 

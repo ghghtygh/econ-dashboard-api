@@ -19,9 +19,9 @@ class MacroCollector(
      * BOND: 장단기 금리차(T10Y2Y), 한국 국채 등
      * 월간/주간/일간 데이터이므로 하루 수회 수집으로 충분합니다.
      */
-    fun collect() {
+    fun collect(): Int {
         log.info("Starting FRED data collection (MACRO + BOND)")
-        dataCollectionService.collectBySourceAndCategories(
+        return dataCollectionService.collectBySourceAndCategories(
             DataSource.FRED,
             listOf(IndicatorCategory.MACRO, IndicatorCategory.BOND)
         )

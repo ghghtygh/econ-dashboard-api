@@ -29,12 +29,20 @@ class IndicatorService(
         } else {
             indicatorCacheService.findAllIndicators()
         }
-        return indicators.map { IndicatorResponse.from(it) }
+        return indicators.map { indicator ->
+            val recentData = indicatorDataRepository.findTop2ByIndicatorIdOrderByDateDesc(indicator.id)
+            val latest = recentData.getOrNull(0)
+            val previous = recentData.getOrNull(1)
+            IndicatorResponse.from(indicator, latest, previous)
+        }
     }
 
     fun getIndicatorById(id: Long): IndicatorResponse {
         val indicator = findIndicatorOrThrow(id)
-        return IndicatorResponse.from(indicator)
+        val recentData = indicatorDataRepository.findTop2ByIndicatorIdOrderByDateDesc(indicator.id)
+        val latest = recentData.getOrNull(0)
+        val previous = recentData.getOrNull(1)
+        return IndicatorResponse.from(indicator, latest, previous)
     }
 
     fun getCategories(): List<IndicatorCategory> {

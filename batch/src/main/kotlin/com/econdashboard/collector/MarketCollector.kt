@@ -19,13 +19,13 @@ class MarketCollector(
         val HOURLY_SYMBOLS = listOf("GC=F", "CL=F", "NG=F", "HG=F", "ZW=F", "ZS=F", "^TNX", "^IRX")
     }
 
-    fun collectFrequent() {
+    fun collectFrequent(): Int {
         log.info("Starting frequent market data collection for {} symbols", FREQUENT_SYMBOLS.size)
-        dataCollectionService.collectBySymbols(FREQUENT_SYMBOLS)
+        return dataCollectionService.collectBySymbols(FREQUENT_SYMBOLS)
     }
 
-    fun collectHourly() {
+    fun collectHourly(): Int {
         log.info("Starting hourly market data collection for {} symbols", HOURLY_SYMBOLS.size)
-        dataCollectionService.collectBySymbols(HOURLY_SYMBOLS)
+        return dataCollectionService.collectBySymbols(HOURLY_SYMBOLS)
     }
 }

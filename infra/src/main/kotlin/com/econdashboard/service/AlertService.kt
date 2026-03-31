@@ -43,9 +43,13 @@ class AlertService(
         return AlertRuleResponse.from(alertRuleRepository.save(rule))
     }
 
-    fun getAlertRules(userId: String): List<AlertRuleResponse> {
-        return alertRuleRepository.findByUserId(userId)
-            .map { AlertRuleResponse.from(it) }
+    fun getAlertRules(userId: String?): List<AlertRuleResponse> {
+        val rules = if (userId != null) {
+            alertRuleRepository.findByUserId(userId)
+        } else {
+            alertRuleRepository.findAll()
+        }
+        return rules.map { AlertRuleResponse.from(it) }
     }
 
     @Transactional
@@ -71,9 +75,13 @@ class AlertService(
         alertRuleRepository.delete(rule)
     }
 
-    fun getAlertHistory(userId: String, pageable: Pageable): Page<AlertHistoryResponse> {
-        return alertHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
-            .map { AlertHistoryResponse.from(it) }
+    fun getAlertHistory(userId: String?, pageable: Pageable): Page<AlertHistoryResponse> {
+        val history = if (userId != null) {
+            alertHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+        } else {
+            alertHistoryRepository.findAllByOrderByCreatedAtDesc(pageable)
+        }
+        return history.map { AlertHistoryResponse.from(it) }
     }
 
     @Transactional

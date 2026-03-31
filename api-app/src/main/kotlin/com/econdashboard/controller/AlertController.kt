@@ -33,7 +33,7 @@ class AlertController(
     @Operation(summary = "알림 규칙 목록 조회")
     @GetMapping("/rules")
     fun getAlertRules(
-        @Parameter(description = "사용자 ID") @RequestParam userId: String
+        @Parameter(description = "사용자 ID") @RequestParam(required = false) userId: String?
     ): ApiResponse<List<AlertRuleResponse>> {
         return ApiResponse.success(alertService.getAlertRules(userId))
     }
@@ -57,7 +57,7 @@ class AlertController(
     @Operation(summary = "알림 이력 조회")
     @GetMapping
     fun getAlertHistory(
-        @Parameter(description = "사용자 ID") @RequestParam userId: String,
+        @Parameter(description = "사용자 ID") @RequestParam(required = false) userId: String?,
         @PageableDefault(size = 20) pageable: Pageable
     ): ApiResponse<Page<AlertHistoryResponse>> {
         return ApiResponse.success(alertService.getAlertHistory(userId, pageable))

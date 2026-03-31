@@ -18,6 +18,9 @@ data class IndicatorResponse(
     val unit: String,
     val source: DataSource,
     val description: String?,
+    val currentValue: BigDecimal?,
+    val changePercent: BigDecimal?,
+    val lastUpdated: LocalDate?,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 ) {
@@ -30,9 +33,38 @@ data class IndicatorResponse(
             unit = indicator.unit,
             source = indicator.source,
             description = indicator.description,
+            currentValue = null,
+            changePercent = null,
+            lastUpdated = null,
             createdAt = indicator.createdAt,
             updatedAt = indicator.updatedAt
         )
+
+        fun from(indicator: Indicator, latestData: IndicatorData?, previousData: IndicatorData?): IndicatorResponse {
+            val currentValue = latestData?.value
+            val changePercent = if (latestData != null && previousData != null && previousData.value.signum() != 0) {
+                (latestData.value - previousData.value)
+                    .multiply(BigDecimal(100))
+                    .divide(previousData.value, 4, java.math.RoundingMode.HALF_UP)
+            } else {
+                latestData?.change
+            }
+
+            return IndicatorResponse(
+                id = indicator.id,
+                name = indicator.name,
+                symbol = indicator.symbol,
+                category = indicator.category,
+                unit = indicator.unit,
+                source = indicator.source,
+                description = indicator.description,
+                currentValue = currentValue,
+                changePercent = changePercent,
+                lastUpdated = latestData?.date,
+                createdAt = indicator.createdAt,
+                updatedAt = indicator.updatedAt
+            )
+        }
     }
 }
 
