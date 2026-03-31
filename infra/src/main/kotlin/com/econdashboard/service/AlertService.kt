@@ -43,6 +43,34 @@ class AlertService(
         return AlertRuleResponse.from(alertRuleRepository.save(rule))
     }
 
+    fun getAlertRules(userId: String): List<AlertRuleResponse> {
+        return alertRuleRepository.findByUserId(userId)
+            .map { AlertRuleResponse.from(it) }
+    }
+
+    @Transactional
+    fun updateAlertRule(id: Long, request: AlertRuleRequest): AlertRuleResponse {
+        val rule = alertRuleRepository.findById(id)
+            .orElseThrow { NotFoundException("AlertRule", id) }
+
+        val indicator = indicatorRepository.findById(request.indicatorId)
+            .orElseThrow { NotFoundException("Indicator", request.indicatorId) }
+
+        rule.userId = request.userId
+        rule.indicator = indicator
+        rule.conditionType = request.conditionType
+        rule.threshold = request.threshold
+
+        return AlertRuleResponse.from(alertRuleRepository.save(rule))
+    }
+
+    @Transactional
+    fun deleteAlertRule(id: Long) {
+        val rule = alertRuleRepository.findById(id)
+            .orElseThrow { NotFoundException("AlertRule", id) }
+        alertRuleRepository.delete(rule)
+    }
+
     fun getAlertHistory(userId: String, pageable: Pageable): Page<AlertHistoryResponse> {
         return alertHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
             .map { AlertHistoryResponse.from(it) }

@@ -30,6 +30,30 @@ class AlertController(
         return ApiResponse.success(alertService.createAlertRule(request))
     }
 
+    @Operation(summary = "알림 규칙 목록 조회")
+    @GetMapping("/rules")
+    fun getAlertRules(
+        @Parameter(description = "사용자 ID") @RequestParam userId: String
+    ): ApiResponse<List<AlertRuleResponse>> {
+        return ApiResponse.success(alertService.getAlertRules(userId))
+    }
+
+    @Operation(summary = "알림 규칙 수정")
+    @PutMapping("/rules/{id}")
+    fun updateAlertRule(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: AlertRuleRequest
+    ): ApiResponse<AlertRuleResponse> {
+        return ApiResponse.success(alertService.updateAlertRule(id, request))
+    }
+
+    @Operation(summary = "알림 규칙 삭제")
+    @DeleteMapping("/rules/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteAlertRule(@PathVariable id: Long) {
+        alertService.deleteAlertRule(id)
+    }
+
     @Operation(summary = "알림 이력 조회")
     @GetMapping
     fun getAlertHistory(
