@@ -20,15 +20,6 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: econ-dashboard
-      auto-offset-reset: earliest
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-
 fred:
   api-key: ${FRED_API_KEY:}
 
@@ -40,6 +31,19 @@ management:
     web:
       exposure:
         include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+collector:
+  retry:
+    max-attempts: 3
+    initial-interval-ms: 2000
+    multiplier: 2.0
+    max-interval-ms: 10000
+  alert:
+    failure-threshold: 3
+    webhook-url: ${COLLECTOR_ALERT_WEBHOOK_URL:}
 
 logging:
   level:
