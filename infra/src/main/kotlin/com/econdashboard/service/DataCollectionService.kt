@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
@@ -80,6 +81,78 @@ class DataCollectionService(
         val results = collectInParallel(indicators)
         log.info("Collection completed: {} success, {} failed out of {} indicators",
             results.first, results.second, indicators.size)
+    }
+
+
+    /**
+     * 특정 지표의 이력 데이터를 backfill합니다.
+     * 이미 존재하는 날짜는 upsert로 갱신합니다.
+     *
+     * @return 저장된 데이터 포인트 수
+     */
+    @Transactional
+    fun collectHistoricalData(indicator: Indicator, from: LocalDate, to: LocalDate): Int {
+        return try {
+            val client = dataSourceClientFactory.getClient(indicator.source)
+            val dataPoints = client.fetchHistoricalData(indicator.symbol, from, to)
+            if (dataPoints.isEmpty()) {
+                log.warn("No historical data returned for {} ({}) from {} to {}",
+                    indicator.name, indicator.symbol, from, to)
+                return 0
+            }
+            dataPoints.forEach { upsertDataPoint(indicator, it) }
+            log.info("Backfilled {} data points for {} ({}) from {} to {}",
+                dataPoints.size, indicator.name, indicator.symbol, from, to)
+            dataPoints.size
+        } catch (e: Exception) {
+            log.error("Historical backfill failed for {} ({}): {}",
+                indicator.name, indicator.symbol, e.message)
+            0
+        }
+    }
+
+    /**
+     * 모든 지표에 대해 이력 데이터를 backfill합니다.
+     * 데이터가 minDataPoints 미만인 지표만 대상으로 합니다.
+     *
+     * @param from backfill 시작일
+     * @param to   backfill 종료일
+     * @param minDataPoints 이 값 이상 데이터가 있으면 스킵
+     */
+    fun backfillAllIndicators(from: LocalDate, to: LocalDate, minDataPoints: Int = 20) {
+        val indicators = indicatorRepository.findAll()
+        log.info("Starting historical backfill for {} indicators (from={}, to={})", indicators.size, from, to)
+
+        var skipped = 0
+        var total = 0
+
+        indicators.forEach { indicator ->
+            val existingData = indicatorDataRepository.findByIndicatorIdAndDateBetweenOrderByDateAsc(
+                indicator.id, from, to
+            )
+            if (existingData.size >= minDataPoints) {
+                log.debug("Skipping backfill for {} ({}): {} data points already exist",
+                    indicator.name, indicator.symbol, existingData.size)
+                skipped++
+                return@forEach
+            }
+
+            try {
+                concurrencyLimit.acquire()
+                try {
+                    val count = collectHistoricalData(indicator, from, to)
+                    total += count
+                } finally {
+                    concurrencyLimit.release()
+                }
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                log.error("Backfill interrupted for {}", indicator.symbol)
+            }
+        }
+
+        log.info("Historical backfill completed: {} indicators skipped, {} total data points saved",
+            skipped, total)
     }
 
     /**
