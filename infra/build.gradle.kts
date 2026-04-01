@@ -13,5 +13,5 @@ dependencies {
     implementation("com.rometools:rome:2.1.0")
 
     runtimeOnly("org.postgresql:postgresql")
-    runtimeOnly("com.h2database:h2")
+    implementation("com.h2database:h2")
 }
