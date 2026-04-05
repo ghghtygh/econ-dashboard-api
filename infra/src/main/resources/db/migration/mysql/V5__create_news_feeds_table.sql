@@ -2,7 +2,7 @@
 CREATE TABLE news_feeds (
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(200)  NOT NULL,
-    url         VARCHAR(1000) NOT NULL UNIQUE,
+    url         VARCHAR(768) NOT NULL UNIQUE,
     category    VARCHAR(50)   NOT NULL,
     enabled     BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
