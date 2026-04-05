@@ -3,7 +3,7 @@ CREATE TABLE news_articles (
     id           BIGINT AUTO_INCREMENT PRIMARY KEY,
     title        VARCHAR(500)  NOT NULL,
     summary      TEXT,
-    url          VARCHAR(1000) NOT NULL UNIQUE,
+    url          VARCHAR(768) NOT NULL UNIQUE,
     source       VARCHAR(500),
     author       VARCHAR(500),
     image_url    VARCHAR(1000),
