@@ -1,0 +1,46 @@
+-- 구독 테이블
+CREATE TABLE subscriptions (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id      VARCHAR(255) NOT NULL,
+    indicator_id BIGINT       NOT NULL,
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_subscription_indicator FOREIGN KEY (indicator_id) REFERENCES indicators (id),
+    CONSTRAINT uq_subscription_user_indicator UNIQUE (user_id, indicator_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_subscriptions_user_id ON subscriptions (user_id);
+
+-- 알림 규칙 테이블
+CREATE TABLE alert_rules (
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id        VARCHAR(255)   NOT NULL,
+    indicator_id   BIGINT         NOT NULL,
+    condition_type VARCHAR(50)    NOT NULL,
+    threshold      DECIMAL(20, 6) NOT NULL,
+    enabled        BOOLEAN        NOT NULL DEFAULT TRUE,
+    created_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_alert_rule_indicator FOREIGN KEY (indicator_id) REFERENCES indicators (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_alert_rules_user_id ON alert_rules (user_id);
+CREATE INDEX idx_alert_rules_indicator_enabled ON alert_rules (indicator_id, enabled);
+
+-- 알림 이력 테이블
+CREATE TABLE alert_history (
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id        VARCHAR(255)   NOT NULL,
+    indicator_id   BIGINT         NOT NULL,
+    alert_rule_id  BIGINT         NOT NULL,
+    condition_type VARCHAR(50)    NOT NULL,
+    threshold      DECIMAL(20, 6) NOT NULL,
+    actual_value   DECIMAL(20, 6) NOT NULL,
+    message        VARCHAR(500)   NOT NULL,
+    created_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_alert_history_indicator FOREIGN KEY (indicator_id) REFERENCES indicators (id),
+    CONSTRAINT fk_alert_history_rule FOREIGN KEY (alert_rule_id) REFERENCES alert_rules (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_alert_history_user_id ON alert_history (user_id);

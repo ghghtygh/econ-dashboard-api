@@ -7,6 +7,8 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -16,6 +18,7 @@ import java.time.Instant
 @Tag(name = "Collectors", description = "데이터 수집기 상태 API")
 @RestController
 @RequestMapping("/api/collectors")
+@ConditionalOnBean(RedisConnectionFactory::class)
 class CollectorStatusController(
     private val redisTemplate: StringRedisTemplate
 ) {

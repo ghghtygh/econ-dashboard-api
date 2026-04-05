@@ -15,7 +15,7 @@ import javax.sql.DataSource
 @RequestMapping("/api/health")
 class HealthController(
     private val dataSource: DataSource,
-    private val redisConnectionFactory: RedisConnectionFactory
+    private val redisConnectionFactory: RedisConnectionFactory?
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -51,6 +51,7 @@ class HealthController(
     }
 
     private fun checkRedis(): Boolean {
+        if (redisConnectionFactory == null) return false
         return try {
             val conn = redisConnectionFactory.connection
             try {

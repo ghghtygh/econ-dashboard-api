@@ -31,7 +31,7 @@ data class CollectorStatus(
 
 @Component
 class CollectorHealthRegistry(
-    private val redisTemplate: StringRedisTemplate
+    private val redisTemplate: StringRedisTemplate?
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -74,6 +74,7 @@ class CollectorHealthRegistry(
     fun getUnhealthyCollectors(): List<CollectorStatus> = statuses.values.filter { !it.healthy }
 
     private fun persistToRedis() {
+        if (redisTemplate == null) return
         try {
             val json = objectMapper.writeValueAsString(statuses.toMap())
             redisTemplate.opsForValue().set(CollectorStatus.REDIS_KEY, json, CollectorStatus.REDIS_TTL)

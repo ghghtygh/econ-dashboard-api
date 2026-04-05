@@ -1,0 +1,48 @@
+-- 경제 지표 마스터 테이블
+CREATE TABLE indicators (
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(255)  NOT NULL,
+    symbol      VARCHAR(255)  NOT NULL UNIQUE,
+    category    VARCHAR(50)   NOT NULL,
+    unit        VARCHAR(50)   NOT NULL,
+    source      VARCHAR(50)   NOT NULL,
+    description VARCHAR(1000),
+    created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 지표 시계열 데이터 테이블
+CREATE TABLE indicator_data (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    indicator_id BIGINT         NOT NULL,
+    `date`       DATE           NOT NULL,
+    `value`      DECIMAL(20, 6) NOT NULL,
+    `open`       DECIMAL(20, 6),
+    high         DECIMAL(20, 6),
+    low          DECIMAL(20, 6),
+    `close`      DECIMAL(20, 6),
+    volume       DECIMAL(20, 2),
+    `change`     DECIMAL(10, 4),
+    created_at   TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_indicator_data_indicator FOREIGN KEY (indicator_id) REFERENCES indicators (id),
+    CONSTRAINT uq_indicator_data_date UNIQUE (indicator_id, `date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_indicator_data_date ON indicator_data (indicator_id, `date`);
+
+-- 대시보드 위젯 테이블
+CREATE TABLE dashboard_widgets (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title        VARCHAR(255) NOT NULL,
+    chart_type   VARCHAR(50)  NOT NULL,
+    position_x   INT          NOT NULL DEFAULT 0,
+    position_y   INT          NOT NULL DEFAULT 0,
+    width        INT          NOT NULL DEFAULT 1,
+    height       INT          NOT NULL DEFAULT 1,
+    config       TEXT,
+    indicator_id BIGINT,
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_widget_indicator FOREIGN KEY (indicator_id) REFERENCES indicators (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

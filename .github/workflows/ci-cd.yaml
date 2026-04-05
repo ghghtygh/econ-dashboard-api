@@ -1,0 +1,90 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - module: api-app
+            image: econ-dashboard-api
+            dockerfile: Dockerfile
+          - module: batch
+            image: econ-dashboard-batch
+            dockerfile: batch/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew :${{ matrix.module }}:bootJar --no-daemon -x test
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/ghghtygh/${{ matrix.image }}:${{ steps.sha.outputs.short }}
+            ${{ env.REGISTRY }}/ghghtygh/${{ matrix.image }}:latest
+
+  update-manifest:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set short SHA
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Checkout k8s-manifests
+        uses: actions/checkout@v4
+        with:
+          repository: ghghtygh/k8s-manifests
+          token: ${{ secrets.K8S_MANIFESTS_PAT }}
+
+      - name: Update deployment image tags
+        run: |
+          SHORT_SHA=${{ steps.sha.outputs.short }}
+          sed -i "s|image: ghcr.io/ghghtygh/econ-dashboard-api:.*|image: ghcr.io/ghghtygh/econ-dashboard-api:${SHORT_SHA}|" apps/econ-api/deployment.yaml
+          sed -i "s|image: ghcr.io/ghghtygh/econ-dashboard-batch:.*|image: ghcr.io/ghghtygh/econ-dashboard-batch:${SHORT_SHA}|" apps/econ-batch/deployment.yaml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --staged --quiet || git commit -m "chore: update econ-api, econ-batch image to ${{ steps.sha.outputs.short }}"
+          git push

@@ -39,9 +39,9 @@ class DataCollectorScheduler(
     }
 
     /**
-     * 주식/환율 수집 - 매 5분
+     * 주식/환율 수집 - 매 15분
      */
-    @Scheduled(fixedRate = 5 * 60 * 1000, initialDelay = 15_000)
+    @Scheduled(fixedRate = 15 * 60 * 1000, initialDelay = 15_000)
     fun collectMarketData() {
         executeWithRetry("market-frequent") {
             val count = marketCollector.collectFrequent()
