@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.xml.sax.InputSource
-import java.net.URL
+import java.net.URI
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -48,9 +48,8 @@ class NewsCollectionService(
     }
 
     private fun collectFromFeed(feedUrl: String, category: NewsCategory): Int {
-        val input = SyndFeedInput()
-        @Suppress("DEPRECATION")
-        val feed = input.build(InputSource(URL(feedUrl).openStream()))
+        val input = SyndFeedInput().apply { isAllowDoctypes = false }
+        val feed = input.build(InputSource(URI(feedUrl).toURL().openStream()))
         var count = 0
 
         feed.entries.forEach { entry ->

@@ -26,6 +26,6 @@ class H2ServerConfig {
     @Bean(initMethod = "start", destroyMethod = "stop")
     fun h2TcpServer(): Server {
         log.info("H2 TCP 서버 시작 (port 9092) — Batch 서버가 같은 DB에 접속할 수 있습니다")
-        return Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092")
+        return Server.createTcpServer("-tcp", "-tcpPort", "9092")
     }
 }

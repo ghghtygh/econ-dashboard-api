@@ -9,9 +9,13 @@ class WebConfig : WebMvcConfigurer {
 
     override fun addCorsMappings(registry: CorsRegistry) {
         registry.addMapping("/api/**")
-            .allowedOrigins("http://localhost:5173", "http://localhost:3000")
+            .allowedOrigins(
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "https://econ.gpglab.site",
+            )
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedHeaders("*")
+            .allowedHeaders("Content-Type", "Authorization", "X-Requested-With", "Accept")
             .allowCredentials(true)
     }
 }
